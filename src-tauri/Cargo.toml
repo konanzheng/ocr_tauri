@@ -25,6 +25,7 @@ image = "0.24"
 imageproc = "0.23"
 tesseract ="0.12"
 platform-dirs = "0.3.0"
+tpsi = {git = "http://github.com/amrbashir/tauri-plugin-single-instance", branch = "master" , package="tauri-plugin-single-instance"}
 
 [features]
 # by default Tauri runs in production mode

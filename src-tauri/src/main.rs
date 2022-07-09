@@ -12,6 +12,7 @@ use tauri::{
     SystemTrayMenu, SystemTrayMenuItem,
 };
 use tesseract;
+use tpsi;
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     message: String,
@@ -30,6 +31,9 @@ fn main() {
     let tray = SystemTray::new().with_menu(tray_menu);
 
     tauri::Builder::default()
+        .plugin(tpsi::init(|app, argv, cwd| {
+            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+        }))
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {

@@ -45,7 +45,9 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": [
+        "tessdata"
+      ],
       "shortDescription": "",
       "targets": "all",
       "windows": {
