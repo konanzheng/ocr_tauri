@@ -3,14 +3,24 @@
 ## 使用tauri+tesseract制作OCR工具
 
 1. 快速识别
-2. 本地应用不联网
-3. ALT+C 全局快捷键直接识别剪贴板中的图片内容
+2. 本地应用不需要联网识别
+3. 全局快捷键直接识别剪贴板中的图片内容
 
-下一步计划
+功能
 
-- [] 日志记录
-- [*] tessdata文件一块打包安装
-- [*] 限制一个实例运行
+- [x] 配置文件个性化配置快捷键和使用模式
+- [x] 资源文件一块打包安装
+- [x] 限制一个实例运行
+- [ ] 自动更新
+
+### 配置说明
+
+```config/app.json```
+
+1. __shortcut_key__: 快捷键 默认ALT+C
+2. __notification__: 显示通知 默认true
+3. __showWindowOn__: 显示程序窗口 默认false
+
 
 ### 使用截图
 
@@ -32,6 +42,8 @@
 7. imageproc 图片处理库
 8. tesseract 图片识别库
 9. platform-dirs 平台目录 
+10. config 配置文件
+11. tauri-plugin-single-instance 单实例插件
 
 ```
 serde_json = "1.0"
@@ -44,6 +56,8 @@ image = "0.24"
 imageproc = "0.23"
 tesseract ="0.12"
 platform-dirs = "0.3.0"
+config = "0.13.1"
+tpsi = {git = "http://github.com/amrbashir/tauri-plugin-single-instance", branch = "master" , package="tauri-plugin-single-instance"}
 ```
 
 

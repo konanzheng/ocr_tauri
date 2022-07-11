@@ -1,4 +1,5 @@
 {
     "shortcut_key":"ALT+C",
-    "notification":true
+    "notification":true,
+    "showWindowOn":false
 }

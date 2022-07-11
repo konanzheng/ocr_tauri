@@ -138,10 +138,13 @@ async fn shortcut(app_handle: tauri::AppHandle)->String {
     let settings = Config::builder()
         .add_source(config::File::with_name("config/app.json")).build().unwrap();
     let accelerator = settings.get_string("shortcut_key").unwrap_or("ALT + C".to_string());
+    let show_window = settings.get_bool("showWindowOn").unwrap_or(true);
     let w = app_handle.get_window("main").unwrap();
     app_handle.global_shortcut_manager().register(&accelerator, move || {
-        w.set_always_on_top(true).unwrap();
-        w.show().unwrap();
+        if show_window {
+            w.set_always_on_top(true).unwrap();
+            w.show().unwrap();
+        }
       app_handle.emit_all("ocr", Payload { message: "ocr".into()}).unwrap();
     }).unwrap();
     accelerator.to_string()
