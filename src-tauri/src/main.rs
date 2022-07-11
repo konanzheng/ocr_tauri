@@ -7,6 +7,7 @@ use clipboard_win::{formats, set_clipboard, Clipboard, Getter};
 use winrt_notification::{Duration, Sound, Toast};
 use platform_dirs::AppDirs;
 use std::{fs, time::SystemTime};
+use config::Config;
 use tauri::{
     CustomMenuItem, GlobalShortcutManager, Manager, SystemTray, SystemTrayEvent,
     SystemTrayMenu, SystemTrayMenuItem,
@@ -112,26 +113,36 @@ fn ocr() -> String {
     contents = contents.replace("\n\n", "\n");
     contents = contents.replace(" ", "");
     set_clipboard(formats::Unicode, &contents).expect("To set clipboard");
-    let toast = Toast::new(Toast::POWERSHELL_APP_ID)
-    .title("OCR成功，结果已复制可以直接粘贴文本")
-    .text1(&contents)
-    .image(p.as_path(), "the ocr image")
-    .sound(Some(Sound::SMS))
-    .duration(Duration::Short)
-    .show();
-    match toast {
-        Ok(_ok) => {},
-        Err(_e) => {println!("{}", _e);},
+    
+    let settings = Config::builder()
+        .add_source(config::File::with_name("config/app.json")).build().unwrap();
+    let notification = settings.get_bool("notification").unwrap_or(true);
+    if notification {
+        let toast = Toast::new(Toast::POWERSHELL_APP_ID)
+        .title("OCR成功，结果已复制可以直接粘贴文本")
+        .text1(&contents)
+        .image(p.as_path(), "the ocr image")
+        .sound(Some(Sound::SMS))
+        .duration(Duration::Short)
+        .show();
+        match toast {
+            Ok(_ok) => {},
+            Err(_e) => {println!("{}", _e);},
+        }
     }
     contents.to_string()
 }
 
 #[tauri::command]
-async fn shortcut(app_handle: tauri::AppHandle) {
+async fn shortcut(app_handle: tauri::AppHandle)->String {
+    let settings = Config::builder()
+        .add_source(config::File::with_name("config/app.json")).build().unwrap();
+    let accelerator = settings.get_string("shortcut_key").unwrap_or("ALT + C".to_string());
     let w = app_handle.get_window("main").unwrap();
-    app_handle.global_shortcut_manager().register("ALT + C", move || {
+    app_handle.global_shortcut_manager().register(&accelerator, move || {
         w.set_always_on_top(true).unwrap();
         w.show().unwrap();
       app_handle.emit_all("ocr", Payload { message: "ocr".into()}).unwrap();
     }).unwrap();
+    accelerator.to_string()
 }

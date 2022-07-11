@@ -9,6 +9,7 @@ defineProps({
 });
 const text = ref(0);
 const img = ref("");
+const shortcut = ref("ALT+C");
 const ocr = function () {
   invoke("img").then((response) => {
     console.log(response);
@@ -28,6 +29,7 @@ onMounted(() => {
     ocr()
   })
   invoke("shortcut").then(r =>{
+    shortcut.value = r
 
   })
 });
@@ -40,7 +42,7 @@ onMounted(() => {
     <textarea v-model="text"></textarea>
   </div>
 
-  <button type="button" @click="ocr">识别粘贴板中内容Alt+C</button>
+  <button type="button" @click="ocr">识别粘贴板中内容{{shortcut}}</button>
 </template>
 
 <style scoped>
