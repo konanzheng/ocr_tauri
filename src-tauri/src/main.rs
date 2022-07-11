@@ -4,7 +4,7 @@
 )]
 
 use clipboard_win::{formats, set_clipboard, Clipboard, Getter};
-use winrt_notification::{Duration, Sound, Toast};
+use winrt_notification::{Duration, Sound, Toast, Scenario};
 use platform_dirs::AppDirs;
 use std::{fs, time::SystemTime};
 use config::Config;
@@ -37,6 +37,16 @@ fn main() {
         }))
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::DoubleClick { position, size, .. } => {
+                println!("position:{:?},size:{:?}", position, size);
+                let window = app.get_window("main").unwrap();
+                if window.is_visible().unwrap() {
+                    window.hide().unwrap();
+                } else {
+                    window.set_always_on_top(true).unwrap();
+                    window.show().unwrap();
+                }
+            }
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "quit" => {
                     std::process::exit(0);
@@ -120,10 +130,12 @@ fn ocr() -> String {
     if notification {
         let toast = Toast::new(Toast::POWERSHELL_APP_ID)
         .title("OCR成功，结果已复制可以直接粘贴文本")
-        .text1(&contents)
+        .text1(&format!("耗时：{} 毫秒", SystemTime::now().duration_since(sy_time).unwrap().as_millis()))
+        .text2(&contents)
         .image(p.as_path(), "the ocr image")
         .sound(Some(Sound::SMS))
         .duration(Duration::Short)
+        .scenario(Scenario::Reminder)
         .show();
         match toast {
             Ok(_ok) => {},
@@ -140,6 +152,11 @@ async fn shortcut(app_handle: tauri::AppHandle)->String {
     let accelerator = settings.get_string("shortcut_key").unwrap_or("ALT + C".to_string());
     let show_window = settings.get_bool("showWindowOn").unwrap_or(true);
     let w = app_handle.get_window("main").unwrap();
+    if show_window {
+        let _ = &w.show().unwrap();
+    } else {
+        let _ = &w.hide().unwrap();
+    }
     app_handle.global_shortcut_manager().register(&accelerator, move || {
         if show_window {
             w.set_always_on_top(true).unwrap();
