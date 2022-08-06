@@ -1,5 +1,6 @@
 {
     "shortcut_key":"ALT+C",
     "notification":true,
-    "showWindowOn":false
+    "showWindowOn":true,
+    "web":9999
 }

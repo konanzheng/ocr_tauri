@@ -4,9 +4,10 @@
 )]
 
 use clipboard_win::{formats, set_clipboard, Clipboard, Getter};
+use warp::Filter;
 use winrt_notification::{Duration, Sound, Toast, Scenario};
 use platform_dirs::AppDirs;
-use std::{fs, time::SystemTime};
+use std::{fs, time::SystemTime,thread, path::PathBuf};
 use config::Config;
 use tauri::{
     CustomMenuItem, GlobalShortcutManager, Manager, SystemTray, SystemTrayEvent,
@@ -14,12 +15,43 @@ use tauri::{
 };
 use tesseract;
 use tpsi;
+use base64::decode;
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     message: String,
 }
 
 fn main() {
+        // 启动tauri
+        thread::spawn(|| {
+            tauri_main();
+        });
+        // 启动web 进程
+        let settings = Config::builder()
+        .add_source(config::File::with_name("config/app.json")).build().unwrap();
+        let port = settings.get_int("web").unwrap() as u16;
+        if port>0 {
+            wrap_web(port);
+        }
+}
+
+#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
+async fn wrap_web(port : u16) {
+    println!("web port: {}", port);
+    // GET /hello/warp => 200 OK with body "Hello, warp!"
+    let ocr = warp::path!("ocr" / String)
+        .map(|name|{
+            let decode = String::from_utf8(decode(&name).unwrap()).unwrap();
+            // println!("ocr, {}!, base64 decode:{}",&name, decode);
+            let p = PathBuf::from(decode);
+            do_ocr(&p)
+        }
+        );
+    let (_uri,srv) = warp::serve(ocr).bind_ephemeral(([0, 0, 0, 0], port));
+    let handle = tokio::spawn(srv);
+    handle.await.unwrap();
+}
+fn tauri_main(){
     let quit = CustomMenuItem::new("quit".to_string(), "退出");
     let show = CustomMenuItem::new("show".to_string(), "显示");
     let hide = CustomMenuItem::new("hide".to_string(), "隐藏");
@@ -65,10 +97,9 @@ fn main() {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![img, ocr, shortcut])
-        .run(tauri::generate_context!())
+        .any_thread().run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
 #[tauri::command]
 fn img() -> String {
     // 读取剪贴板内图片,没有返回空
@@ -99,27 +130,24 @@ fn img() -> String {
     };
     return result;
 }
-
-#[tauri::command]
-fn ocr() -> String {
+fn do_ocr(p: &PathBuf) ->String {
     // 识别ocr 图片
-    let sy_time = SystemTime::now();
     let mut tess = tesseract::Tesseract::new(Some("tessdata"), Some("chi_sim")).unwrap();
-    let app_dirs = AppDirs::new(Some("ocr_tauri"), false).unwrap();
-    // let png = ;
-    let p = app_dirs.data_dir.join("clipboard_ocr.png");
     tess = tess.set_image(p
                 .to_str()
                 .unwrap(),
         )
         .unwrap();
     tess = tess.recognize().unwrap();
-    let mut contents = tess.get_text().unwrap();
-    println!(
-        "{} /n tesseract ocr end in {} seccends !",
-        contents,
-        SystemTime::now().duration_since(sy_time).unwrap().as_secs()
-    );
+    return tess.get_text().unwrap();
+}
+#[tauri::command]
+fn ocr() -> String {
+    
+    let sy_time = SystemTime::now();
+    let app_dirs = AppDirs::new(Some("ocr_tauri"), false).unwrap();
+    let p = app_dirs.data_dir.join("clipboard_ocr.png");
+    let mut contents = do_ocr(&p);
     contents = contents.replace("\n\n", "\n");
     contents = contents.replace(" ", "");
     set_clipboard(formats::Unicode, &contents).expect("To set clipboard");

@@ -27,6 +27,9 @@ tesseract ="0.12"
 platform-dirs = "0.3.0"
 config = "0.13.1"
 tpsi = {git = "http://github.com/amrbashir/tauri-plugin-single-instance", branch = "master" , package="tauri-plugin-single-instance"}
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+base64 = "0.13.0"
 
 [features]
 # by default Tauri runs in production mode

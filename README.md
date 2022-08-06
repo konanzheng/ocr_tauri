@@ -20,6 +20,7 @@
 1. __shortcut_key__: 快捷键 默认ALT+C
 2. __notification__: 显示通知 默认true
 3. __showWindowOn__: 显示程序窗口 默认false
+4. __web__: web服务端口，默认9999，小于等于0表示不启用web服务
 
 推荐日常使用不显示窗口，仅显示通知的模式，不干扰正常工作。
 
